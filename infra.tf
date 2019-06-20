@@ -37,17 +37,7 @@ resource "aws_instance" "GoCD-Server" {
 
     vpc_security_group_ids = ["${aws_security_group.GoCD-SG.id}"]
     key_name = "aws-whelan-personal"
-
-    user_data = <<-EOF
-              #!/bin/bash
-              sudo mkdir home/downloads
-              cd home/downloads
-              sudo yum install -y java-1.8.0-openjdk
-              wget https://download.gocd.org/binaries/19.5.0-9272/rpm/go-server-19.5.0-9272.noarch.rpm
-              sudo rpm -i go-server-19.5.0-9272.noarch.rpm
-              /etc/init.d/go-server start
-              EOF
-
+    user_data = "${file("infra/go-server-install.sh")}"
     tags {
         Name = "GoCD Server"
     }
@@ -58,6 +48,14 @@ resource "aws_eip_association" "GoCD-Server-EIP" {
     allocation_id = "${aws_eip.GoCD-Server-IP.id}"
 }
 
+data "template_file" "go-agent-init" {
+  template = "${file("infra/go-agent-install.sh.tpl")}"
+
+  vars {
+    go-server-address = "${aws_eip.GoCD-Server-IP.public_dns}"
+  }
+}
+
 resource "aws_instance" "GoCD-Agent" {
     ami = "ami-0cc96feef8c6bbff3"
     instance_type = "t2.micro"
@@ -65,16 +63,7 @@ resource "aws_instance" "GoCD-Agent" {
     vpc_security_group_ids = ["${aws_security_group.GoCD-SG.id}"]
     key_name = "aws-whelan-personal"
 
-    user_data = <<-EOF
-              #!/bin/bash
-              sudo mkdir home/downloads
-              cd home/downloads
-              sudo yum install -y java-1.8.0-openjdk
-              wget https://download.gocd.org/binaries/19.5.0-9272/rpm/go-agent-19.5.0-9272.noarch.rpm
-              sudo rpm -i go-agent-19.5.0-9272.noarch.rpm
-              sudo sed -i 's|127.0.0.1|${aws_eip.GoCD-Server-IP.public_dns}|g' /etc/default/go-agent
-              sudo /etc/init.d/go-agent start
-              EOF
+    user_data = "${data.template_file.go-agent-init.rendered}"
 
     tags {
         Name = "GoCD Agent"
