@@ -2,21 +2,16 @@ provider "aws" {
     region = "us-east-1"
 }
 
-variable "gocd_server_port" {
-    description = "The port the GoCD Server will use for HTTP requests"
-    default = 8154
-}
-
 resource "aws_eip" "GoCD-Server-IP" {
   vpc = true
 }
 
-resource "aws_security_group" "GoCD-Server" {
-    name = "GoCD Server SG"
+resource "aws_security_group" "GoCD-SG" {
+    name = "GoCD SG"
 
     ingress {
-        from_port = "${var.gocd_server_port}"
-        to_port = "${var.gocd_server_port}"
+        from_port = 8154
+        to_port = 8154
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
@@ -40,7 +35,7 @@ resource "aws_instance" "GoCD-Server" {
     ami = "ami-0cc96feef8c6bbff3"
     instance_type = "t2.micro"
 
-    vpc_security_group_ids = ["${aws_security_group.GoCD-Server.id}"]
+    vpc_security_group_ids = ["${aws_security_group.GoCD-SG.id}"]
     key_name = "aws-whelan-personal"
 
     user_data = <<-EOF
@@ -62,3 +57,27 @@ resource "aws_eip_association" "GoCD-Server-EIP" {
     instance_id = "${aws_instance.GoCD-Server.id}"
     allocation_id = "${aws_eip.GoCD-Server-IP.id}"
 }
+
+resource "aws_instance" "GoCD-Agent" {
+    ami = "ami-0cc96feef8c6bbff3"
+    instance_type = "t2.micro"
+
+    vpc_security_group_ids = ["${aws_security_group.GoCD-SG.id}"]
+    key_name = "aws-whelan-personal"
+
+    user_data = <<-EOF
+              #!/bin/bash
+              sudo mkdir home/downloads
+              cd home/downloads
+              sudo yum install -y java-1.8.0-openjdk
+              wget https://download.gocd.org/binaries/19.5.0-9272/rpm/go-agent-19.5.0-9272.noarch.rpm
+              sudo rpm -i go-agent-19.5.0-9272.noarch.rpm
+              sudo sed -i 's|127.0.0.1|${aws_eip.GoCD-Server-IP.public_dns}|g' /etc/default/go-agent
+              sudo /etc/init.d/go-agent start
+              EOF
+
+    tags {
+        Name = "GoCD Agent"
+    }
+}
+
