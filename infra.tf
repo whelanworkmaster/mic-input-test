@@ -83,3 +83,7 @@ resource "aws_instance" "Frontend-Docker" {
         Name = "Frontend Host"
     }
 }
+
+resource "aws_ecr_repository" "mic-input-test" {
+  name = "mic-input-test"
+}

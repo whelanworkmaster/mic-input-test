@@ -10,31 +10,12 @@ pipelines:
         shallow_clone: false
         auto_update: true
         branch: master
-        # whitelist: 
-        #   - frontend/**/*.*
     stages:
-    # - test:
-    #     fetch_materials: true
-    #     keep_artifacts: false
-    #     clean_workspace: false
-    #     approval:
-    #       type: success
-    #     jobs:
-    #       test:
-    #         timeout: 0
-    #         tasks:
-    #         - exec:
-    #             arguments:
-    #             - ./frontend/pipeline/scripts/docker-test.sh
-    #             command: sh
-    #             run_if: passed
     - build-and-deploy:
         environment_variables:
               AWS_REGION: us-east-1
-              DOCKER_IMAGE_REPO: atl-beach-frontend
-              DOCKER_ECR_REPO: 160071257600.dkr.ecr.us-east-1.amazonaws.com
-              PEM_FILE_LOCATION: /var/go/permissions/atlbeach.pem
-              DEV_INSTANCE_LOGIN_ADDRESS: ec2-user@ec2-3-88-52-112.compute-1.amazonaws.com
+              DOCKER_IMAGE_REPO: mic-input-test
+              DOCKER_ECR_REPO: 539142489469.dkr.ecr.us-east-1.amazonaws.com
         fetch_materials: true
         keep_artifacts: false
         clean_workspace: false
@@ -46,7 +27,7 @@ pipelines:
             tasks:
             - exec:
                 arguments:
-                - ./frontend/pipeline/scripts/docker-build.sh
+                - ./pipeline/scripts/docker-build.sh
                 command: sh
                 run_if: passed
           pull-and-start-docker-image:
@@ -54,6 +35,6 @@ pipelines:
             tasks:
             - exec:
                 arguments:
-                - ./frontend/pipeline/scripts/docker-start.sh
+                - ./pipeline/scripts/docker-start.sh
                 command: bash
                 run_if: passed
