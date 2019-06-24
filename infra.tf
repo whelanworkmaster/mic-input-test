@@ -70,3 +70,16 @@ resource "aws_instance" "GoCD-Agent" {
     }
 }
 
+resource "aws_instance" "Frontend-Docker" {
+    ami = "ami-0cc96feef8c6bbff3"
+    instance_type = "t2.micro"
+
+    vpc_security_group_ids = ["${aws_security_group.GoCD-SG.id}"]
+    key_name = "aws-whelan-personal"
+
+    user_data = "${file("infra/frontend-server-install.sh")}"
+
+    tags {
+        Name = "Frontend Host"
+    }
+}
