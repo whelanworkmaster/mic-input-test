@@ -16,13 +16,9 @@ docker rmi -f $IMAGE
 
 echo "=========== Building Frontend: Building the docker image =============="
 
-docker build -t $TAG ./frontend
+docker build -t $TAG .
 docker tag $TAG $LATEST_TAG
 docker tag $TAG frontend
-
-echo "=========== Building Frontend: Building the docker test image =============="
-
-docker build -t frontend -f ./frontend/Dockerfile.test .
 
 echo "=========== Building Frontend: Running the docker test image =============="
 
